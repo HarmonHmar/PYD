@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Portal</title>
+    <style>
+        :root {
+            --primary: #25d366;
+            --dark: #128c7e;
+            --bg: #f0f2f5;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h2 { text-align: center; color: #333; margin-bottom: 25px; }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px; /* Prevents iOS zoom on focus */
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-login { background-color: var(--primary); color: white; }
+        .btn-forgot { background-color: transparent; color: var(--dark); border: 1px solid var(--dark); }
+
+        #error-msg { color: #d9534f; text-align: center; font-size: 14px; margin-top: 10px; display: none; }
+
+        /* Table Styles */
+        #data-section { display: none; width: 100%; }
+        .table-wrapper { overflow-x: auto; margin-top: 15px; background: white; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 12px; border: 1px solid #eee; text-align: left; }
+        th { background: var(--dark); color: white; }
+        tr:nth-child(even) { background: #fafafa; }
+        
+        .logout-link { display: block; text-align: center; margin-top: 20px; color: #999; text-decoration: none; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="login-page" class="card">
+        <h2>Member Login</h2>
+        <input type="text" id="username" placeholder="Enter Name">
+        <input type="password" id="password" placeholder="Enter Password">
+        
+        <div class="checkbox-container">
+            <input type="checkbox" id="rememberMe">
+            <label for="rememberMe">&nbsp; Auto Login</label>
+        </div>
+
+        <button class="btn-login" onclick="handleLogin()">LOGIN</button>
+        <button class="btn-forgot" onclick="forgotPassword()">Forgot Password</button>
+        <p id="error-msg">User Not Found</p>
+    </div>
+
+    <div id="data-section">
+        <div class="card">
+            <h2>Welcome, <span id="display-name"></span></h2>
+            <div class="table-wrapper">
+                <table id="data-table">
+                    <thead><tr id="table-head"></tr></thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
+            <a href="#" class="logout-link" onclick="logout()">Sign Out</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. HARDCODED USERS
+    const users = [
+        { name: "John Smith", pass: "12345" },
+        { name: "Adam Walker", pass: "654321" }
+    ];
+
+    // 2. GOOGLE SHEET CONFIG
+    // REPLACE 'YOUR_SHEET_ID_HERE' with your actual Google Sheet ID
+    const SHEET_ID = 'YOUR_SHEET_ID_HERE';
+    const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/pub?output=csv`;
+
+    // ON LOAD: Check Auto Login
+    window.onload = function() {
+        const savedUser = localStorage.getItem("loggedInUser");
+        if (savedUser) {
+            showDashboard(savedUser);
+        }
+    };
+
+    function handleLogin() {
+        const userInp = document.getElementById("username").value;
+        const passInp = document.getElementById("password").value;
+        const remember = document.getElementById("rememberMe").checked;
+
+        const user = users.find(u => u.name === userInp && u.pass === passInp);
+
+        if (user) {
+            if (remember) {
+                localStorage.setItem("loggedInUser", user.name);
+            }
+            showDashboard(user.name);
+        } else {
+            document.getElementById("error-msg").style.display = "block";
+        }
+    }
+
+    function showDashboard(name) {
+        document.getElementById("login-page").style.display = "none";
+        document.getElementById("data-section").style.display = "block";
+        document.getElementById("display-name").innerText = name;
+        fetchSheetData(name);
+    }
+
+    function forgotPassword() {
+        const msg = encodeURIComponent("I forgot password");
+        window.location.href = `https://wa.me/919362666588?text=${msg}`;
+    }
+
+    async function fetchSheetData(userName) {
+        try {
+            const response = await fetch(SHEET_URL);
+            const data = await response.text();
+            const rows = data.split("\n").map(row => row.split(","));
+            
+            const headers = rows[0];
+            const tbody = document.getElementById("table-body");
+            const thead = document.getElementById("table-head");
+            
+            // Set Headers
+            thead.innerHTML = headers.map(h => `<th>${h}</th>`).join("");
+            
+            // Filter and Display rows where the first column matches the Name
+            tbody.innerHTML = "";
+            rows.slice(1).forEach(row => {
+                if(row[0] && row[0].trim().toLowerCase() === userName.toLowerCase()) {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = row.map(cell => `<td>${cell}</td>`).join("");
+                    tbody.appendChild(tr);
+                }
+            });
+        } catch (error) {
+            console.error("Error fetching sheet:", error);
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem("loggedInUser");
+        location.reload();
+    }
+</script>
+
+</body>
+</html>
