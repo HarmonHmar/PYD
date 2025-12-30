@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin & Member Portal</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 900px; }
+        .hidden { display: none !important; }
+        h2 { color: #333; margin-top: 0; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        input, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        
+        .btn-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        .btn-login { background: #007bff; color: white; width: 100%; margin-top: 10px; }
+        .btn-logout { background: #dc3545; color: white; }
+        .btn-print { background: #6f42c1; color: white; margin-right: 10px; }
+        .btn-update { background: #28a745; color: white; width: 100%; margin-top: 5px; }
+
+        .error { color: #721c24; background: #f8d7da; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; text-align: center; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background: #f8f9fa; font-size: 14px; color: #666; }
+        
+        .admin-box { background: #e3f2fd; padding: 15px; border: 1px solid #90caf9; border-radius: 8px; margin-bottom: 20px; }
+        .badge { background: #1976d2; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; vertical-align: middle; }
+        
+        #print-header { display: none; text-align: center; margin-bottom: 20px; }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; border: none; width: 100%; }
+            .admin-box, .btn-row, #err-msg, .btn-update, .btn-login { display: none !important; }
+            #print-header { display: block !important; }
+            table { width: 100%; border: 1px solid #000; }
+            th, td { border: 1px solid #000; padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="login-zone">
+        <h2>System Login</h2>
+        <div id="err-msg" class="error"></div>
+        <input type="text" id="user-in" placeholder="Username">
+        <input type="password" id="pass-in" placeholder="Password">
+        <button class="btn-login" onclick="attemptLogin(true)">Login & Save (Auto Login)</button>
+        <button class="btn-login" style="background:#6c757d;" onclick="attemptLogin(false)">Login Once</button>
+    </div>
+
+    <div id="data-zone" class="hidden">
+        <div id="print-header">
+            <h1 id="print-title">Personal Data Report</h1>
+            <p id="print-date"></p>
+        </div>
+
+        <div class="btn-row">
+            <h2>User: <span id="user-display"></span> <span id="admin-tag" class="badge hidden">ADMIN</span></h2>
+            <div>
+                <button class="btn-print" onclick="prepareAndPrint()">Print PDF</button>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div id="admin-panel" class="hidden">
+            <div class="admin-box">
+                <h4 style="margin:0 0 5px 0;">Admin Tools: Update Numbers</h4>
+                <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 10px;">
+                    <select id="adm-user-select"></select>
+                    <input type="number" id="adm-add1" placeholder="+/- Num 1">
+                    <input type="number" id="adm-add2" placeholder="+/- Num 2">
+                    <input type="number" id="adm-add3" placeholder="+/- Num 3">
+                </div>
+                <button class="btn-update" onclick="adminUpdateData()">Update Member & Save</button>
+            </div>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Member Name</th>
+                    <th>Number 1</th>
+                    <th>Number 2</th>
+                    <th>Number 3</th>
+                    <th>Last Update Date</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const users = [
+        { name: "James", pass: "123" },
+        { name: "John",  pass: "456", isAdmin: true }, 
+        { name: "Adam",  pass: "789" }
+    ];
+
+    const initialData = [
+        { owner: "James", n1: 50, n2: 70, n3: 0, lastDate: "Never" },
+        { owner: "John",  n1: 0,  n2: 0,  n3: 0, lastDate: "Never" },
+        { owner: "Adam",  n1: 100, n2: 95, n3: 0, lastDate: "Never" }
+    ];
+
+    let databaseRows = [];
+    let currentUser = null;
+
+    window.onload = function() {
+        const savedData = localStorage.getItem("my_offline_data");
+        databaseRows = savedData ? JSON.parse(savedData) : initialData;
+
+        const autoU = localStorage.getItem("auto_user");
+        const autoP = localStorage.getItem("auto_pass");
+        if (autoU && autoP) { checkCredentials(autoU, autoP, false); }
+    };
+
+    function attemptLogin(save) {
+        const u = document.getElementById('user-in').value;
+        const p = document.getElementById('pass-in').value;
+        checkCredentials(u, p, save);
+    }
+
+    function checkCredentials(u, p, save) {
+        const found = users.find(x => x.name.toLowerCase() === u.toLowerCase() && x.pass === p);
+        if(found) {
+            if(save) {
+                localStorage.setItem("auto_user", u);
+                localStorage.setItem("auto_pass", p);
+            }
+            currentUser = found;
+            renderDashboard();
+        } else {
+            const err = document.getElementById('err-msg');
+            err.style.display = "block";
+            err.innerText = "Wrong name or password";
+            localStorage.removeItem("auto_user");
+            localStorage.removeItem("auto_pass");
+        }
+    }
+
+    function renderDashboard() {
+        document.getElementById('login-zone').classList.add('hidden');
+        document.getElementById('data-zone').classList.remove('hidden');
+        document.getElementById('user-display').innerText = currentUser.name;
+
+        if(currentUser.isAdmin) {
+            document.getElementById('admin-panel').classList.remove('hidden');
+            document.getElementById('admin-tag').classList.remove('hidden');
+            const sel = document.getElementById('adm-user-select');
+            sel.innerHTML = users.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
+        }
+        refreshTable();
+    }
+
+    function refreshTable(printing = false) {
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = "";
+        let rowsToDisplay = (printing || !currentUser.isAdmin) ? 
+            databaseRows.filter(r => r.owner.toLowerCase() === currentUser.name.toLowerCase()) : 
+            databaseRows;
+
+        rowsToDisplay.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${row.owner}</td>
+                <td>${row.n1}</td>
+                <td>${row.n2}</td>
+                <td>${row.n3 || 0}</td>
+                <td style="font-size:12px; color:gray;">${row.lastDate}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function adminUpdateData() {
+        const targetName = document.getElementById('adm-user-select').value;
+        const v1 = parseInt(document.getElementById('adm-add1').value) || 0;
+        const v2 = parseInt(document.getElementById('adm-add2').value) || 0;
+        const v3 = parseInt(document.getElementById('adm-add3').value) || 0;
+
+        const record = databaseRows.find(r => r.owner === targetName);
+        if(record) {
+            record.n1 += v1; 
+            record.n2 += v2;
+            record.n3 = (record.n3 || 0) + v3;
+            
+            const now = new Date();
+            record.lastDate = now.toLocaleDateString() + " " + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            
+            localStorage.setItem("my_offline_data", JSON.stringify(databaseRows));
+            refreshTable();
+            
+            document.getElementById('adm-add1').value = ""; 
+            document.getElementById('adm-add2').value = "";
+            document.getElementById('adm-add3').value = "";
+            alert(`Updated successfully!`);
+        }
+    }
+
+    function prepareAndPrint() {
+        refreshTable(true);
+        document.getElementById('print-title').innerText = "Data Report for " + currentUser.name;
+        document.getElementById('print-date').innerText = "Report Generated: " + new Date().toLocaleString();
+        window.print();
+        setTimeout(refreshTable, 500);
+    }
+
+    function logout() {
+        localStorage.removeItem("auto_user");
+        localStorage.removeItem("auto_pass");
+        location.reload();
+    }
+</script>
+</body>
+</html>
