@@ -1,98 +1,123 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Member Login</title>
+    <title>Portal</title>
     <style>
-        body { font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; margin: 0; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 85%; max-width: 350px; }
-        h2 { text-align: center; color: #1c1e21; margin-bottom: 20px; }
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .container { width: 100%; max-width: 400px; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; margin-bottom: 20px; color: #333; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
+        .btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn:disabled { background: #ccc; }
-        .options { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; font-size: 13px; }
-        .wa { color: #25D366; text-decoration: none; font-weight: bold; }
-        /* Modal Popup */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 10; }
-        .m-box { background: white; padding: 20px; border-radius: 10px; text-align: center; width: 260px; }
-        .m-box h3 { color: #d93025; margin-top: 0; }
-        .m-box button { background: #333; color: white; border: none; padding: 8px 20px; border-radius: 5px; margin-top: 10px; }
+        
+        /* Dashboard */
+        #homeLayout { display: none; }
+        .info-box { background: #f8f9fa; padding: 10px 15px; border-radius: 8px; border-left: 4px solid #007bff; margin-bottom: 10px; }
+        .label { font-size: 11px; color: #666; font-weight: bold; display: block; }
+        .val-input { width: 100%; border: none; background: transparent; font-size: 16px; color: #222; font-weight: bold; padding: 0; outline: none; }
+        .val-input:disabled { color: #444; opacity: 1; }
+        
+        .badge { font-size: 10px; padding: 3px 8px; border-radius: 10px; color: white; float: right; text-transform: uppercase; }
+        .admin-bg { background: #e74c3c; } .member-bg { background: #2ecc71; }
+        #saveBtn { background: #28a745; display: none; }
+        .update-text { font-size: 11px; color: #999; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <form id="loginForm">
+<div class="container">
+    <div id="loginLayout" class="card">
         <h2>Login</h2>
-        <input type="text" id="u" placeholder="Username" required>
-        <input type="password" id="p" placeholder="Password" required>
+        <input type="text" id="u" placeholder="Username">
+        <input type="password" id="p" placeholder="Password">
+        <button class="btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
+    </div>
+
+    <div id="homeLayout" class="card">
+        <span id="roleBadge" class="badge"></span>
+        <h2 id="dispUser" style="text-align:left; margin-top:0;">User</h2>
         
-        <div class="options">
-            <label><input type="checkbox" id="auto"> Auto Login</label>
-            <a href="https://wa.me/919362666588" class="wa">Forgot?</a>
-        </div>
+        <div class="info-box"><span class="label">Membership Fee</span><input class="val-input" id="fee" disabled></div>
+        <div class="info-box"><span class="label">Inkhâwm zât</span><input class="val-input" id="inkhawm" disabled></div>
+        <div class="info-box"><span class="label">Faiṭhâm</span><input class="val-input" id="faitham" disabled></div>
+        <div class="info-box"><span class="label">Target</span><input class="val-input" id="target" disabled></div>
+        <div class="info-box"><span class="label">Target pêk zât</span><input class="val-input" id="tpekat" disabled></div>
+        <div class="info-box"><span class="label">Target pêk ni</span><input class="val-input" id="tpni" disabled></div>
 
-        <button type="submit" class="btn" id="submitBtn">Sign In</button>
-    </form>
-</div>
-
-<div class="modal" id="errorModal">
-    <div class="m-box">
-        <h3>Not Found</h3>
-        <p>User credentials are incorrect or missing.</p>
-        <button onclick="document.getElementById('errorModal').style.display='none'">Try Again</button>
+        <p class="update-text">Last Update: <span id="lastUpdate">--</span></p>
+        
+        <button class="btn" id="saveBtn" onclick="updateData()">Save Changes</button>
+        <button class="btn" style="background:#6c757d" onclick="location.reload()">Logout</button>
     </div>
 </div>
 
 <script>
-    // YOUR WEB APP URL
-    const apiURL = 'https://script.google.com/macros/s/AKfycbzR7Llrj4Y0Rrx5z3489dLL1Og_VC1nNtGZNs8Ki99OTJBjcZONukkICfdhhmRtu0fH/exec';
+    const api = 'https://script.google.com/macros/s/AKfycbzR7Llrj4Y0Rrx5z3489dLL1Og_VC1nNtGZNs8Ki99OTJBjcZONukkICfdhhmRtu0fH/exec';
+    let userRow = null;
 
-    // 1. Auto-fill if data exists
-    window.onload = () => {
-        if(localStorage.getItem('saved_u')) {
-            document.getElementById('u').value = localStorage.getItem('saved_u');
-            document.getElementById('p').value = localStorage.getItem('saved_p');
-            document.getElementById('auto').checked = true;
-        }
-    };
-
-    // 2. Login Logic
-    document.getElementById('loginForm').onsubmit = function(e) {
-        e.preventDefault();
-        const btn = document.getElementById('submitBtn');
+    function handleLogin() {
+        const u = document.getElementById('u').value;
+        const p = document.getElementById('p').value;
+        const btn = document.getElementById('loginBtn');
         btn.innerText = "Checking...";
-        btn.disabled = true;
-
-        const user = document.getElementById('u').value;
-        const pass = document.getElementById('p').value;
-
-        // Using a cleaner fetch to avoid database errors
-        fetch(`${apiURL}?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`)
+        
+        fetch(`${api}?username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`)
             .then(res => res.json())
             .then(data => {
                 if(data.result === "found") {
-                    if(document.getElementById('auto').checked) {
-                        localStorage.setItem('saved_u', user);
-                        localStorage.setItem('saved_p', pass);
-                    } else {
-                        localStorage.clear();
-                    }
-                    alert("Login Successful!");
-                } else {
-                    document.getElementById('errorModal').style.display = 'flex';
-                }
+                    userRow = data.row;
+                    showHome(data.userData);
+                } else { alert("Login Error: Check credentials."); btn.innerText = "Sign In"; }
             })
-            .catch(err => {
-                alert("Database Error: Make sure your Script is deployed as 'Anyone'.");
-                console.log(err);
-            })
-            .finally(() => {
-                btn.innerText = "Sign In";
-                btn.disabled = false;
-            });
-    };
-</script>
+            .catch(() => alert("Network Error"));
+    }
 
+    function showHome(d) {
+        document.getElementById('loginLayout').style.display = 'none';
+        document.getElementById('homeLayout').style.display = 'block';
+        document.getElementById('dispUser').innerText = d.username;
+        document.getElementById('lastUpdate').innerText = d.update || 'N/A';
+
+        const fields = ['fee', 'inkhawm', 'faitham', 'target', 'tpekat', 'tpni'];
+        fields.forEach(f => document.getElementById(f).value = d[f] || '');
+
+        const badge = document.getElementById('roleBadge');
+        badge.innerText = d.role;
+        
+        if(d.role === "Admin") {
+            badge.className = "badge admin-bg";
+            fields.forEach(f => document.getElementById(f).disabled = false);
+            document.getElementById('saveBtn').style.display = 'block';
+        } else {
+            badge.className = "badge member-bg";
+        }
+    }
+
+    function updateData() {
+        const btn = document.getElementById('saveBtn');
+        btn.innerText = "Saving...";
+        
+        const payload = {
+            row: userRow,
+            fee: document.getElementById('fee').value,
+            inkhawm: document.getElementById('inkhawm').value,
+            faitham: document.getElementById('faitham').value,
+            target: document.getElementById('target').value,
+            tpekat: document.getElementById('tpekat').value,
+            tpni: document.getElementById('tpni').value
+        };
+
+        fetch(api, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        }).then(() => {
+            alert("Data Saved Successfully!");
+            btn.innerText = "Save Changes";
+        }).catch(() => alert("Save failed. Check script permissions."));
+    }
+</script>
 </body>
 </html>
