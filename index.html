@@ -2,73 +2,97 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Member Login</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; margin: 0; }
-        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 90%; max-width: 350px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 12px; background: #1877f2; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .btn:disabled { background: #89b4fa; }
-        .wa { display: block; text-align: right; font-size: 12px; color: #25D366; text-decoration: none; margin-bottom: 20px; font-weight: bold; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; }
-        .m-content { background: white; padding: 20px; border-radius: 8px; text-align: center; width: 280px; }
+        body { font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; margin: 0; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 85%; max-width: 350px; }
+        h2 { text-align: center; color: #1c1e21; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
+        .btn:disabled { background: #ccc; }
+        .options { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; font-size: 13px; }
+        .wa { color: #25D366; text-decoration: none; font-weight: bold; }
+        /* Modal Popup */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 10; }
+        .m-box { background: white; padding: 20px; border-radius: 10px; text-align: center; width: 260px; }
+        .m-box h3 { color: #d93025; margin-top: 0; }
+        .m-box button { background: #333; color: white; border: none; padding: 8px 20px; border-radius: 5px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <form id="loginForm">
-        <h2 style="text-align:center">Login</h2>
+        <h2>Login</h2>
         <input type="text" id="u" placeholder="Username" required>
         <input type="password" id="p" placeholder="Password" required>
-        <label style="font-size:12px"><input type="checkbox" id="auto"> Auto Login</label>
-        <a href="https://wa.me/919362666588" class="wa">Forgot Password?</a>
-        <button type="submit" class="btn" id="b">Sign In</button>
+        
+        <div class="options">
+            <label><input type="checkbox" id="auto"> Auto Login</label>
+            <a href="https://wa.me/919362666588" class="wa">Forgot?</a>
+        </div>
+
+        <button type="submit" class="btn" id="submitBtn">Sign In</button>
     </form>
 </div>
 
-<div class="modal" id="m">
-    <div class="m-content">
-        <h3 style="color:red">Not Found</h3>
-        <p>Credentials do not match.</p>
-        <button onclick="document.getElementById('m').style.display='none'">Try Again</button>
+<div class="modal" id="errorModal">
+    <div class="m-box">
+        <h3>Not Found</h3>
+        <p>User credentials are incorrect or missing.</p>
+        <button onclick="document.getElementById('errorModal').style.display='none'">Try Again</button>
     </div>
 </div>
 
 <script>
-    const api = 'https://script.google.com/macros/s/AKfycbzxcQi1YOZGk8dhDzKSVfInLUcFFcxUQbTF_u41AnxQTSClZdouqSVz1Pft9ZbNOzQx/exec';
+    // YOUR WEB APP URL
+    const apiURL = 'https://script.google.com/macros/s/AKfycbzR7Llrj4Y0Rrx5z3489dLL1Og_VC1nNtGZNs8Ki99OTJBjcZONukkICfdhhmRtu0fH/exec';
 
+    // 1. Auto-fill if data exists
     window.onload = () => {
-        if(localStorage.getItem('un')) {
-            document.getElementById('u').value = localStorage.getItem('un');
-            document.getElementById('p').value = localStorage.getItem('pw');
+        if(localStorage.getItem('saved_u')) {
+            document.getElementById('u').value = localStorage.getItem('saved_u');
+            document.getElementById('p').value = localStorage.getItem('saved_p');
             document.getElementById('auto').checked = true;
         }
     };
 
-    document.getElementById('loginForm').onsubmit = (e) => {
+    // 2. Login Logic
+    document.getElementById('loginForm').onsubmit = function(e) {
         e.preventDefault();
-        const btn = document.getElementById('b');
+        const btn = document.getElementById('submitBtn');
         btn.innerText = "Checking...";
         btn.disabled = true;
 
         const user = document.getElementById('u').value;
         const pass = document.getElementById('p').value;
 
-        fetch(`${api}?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`)
+        // Using a cleaner fetch to avoid database errors
+        fetch(`${apiURL}?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`)
             .then(res => res.json())
             .then(data => {
                 if(data.result === "found") {
                     if(document.getElementById('auto').checked) {
-                        localStorage.setItem('un', user);
-                        localStorage.setItem('pw', pass);
-                    } else { localStorage.clear(); }
-                    alert("Success!");
-                } else { document.getElementById('m').style.display = 'flex'; }
+                        localStorage.setItem('saved_u', user);
+                        localStorage.setItem('saved_p', pass);
+                    } else {
+                        localStorage.clear();
+                    }
+                    alert("Login Successful!");
+                } else {
+                    document.getElementById('errorModal').style.display = 'flex';
+                }
             })
-            .catch(() => alert("Error connecting to database"))
-            .finally(() => { btn.innerText = "Sign In"; btn.disabled = false; });
+            .catch(err => {
+                alert("Database Error: Make sure your Script is deployed as 'Anyone'.");
+                console.log(err);
+            })
+            .finally(() => {
+                btn.innerText = "Sign In";
+                btn.disabled = false;
+            });
     };
 </script>
+
 </body>
 </html>
