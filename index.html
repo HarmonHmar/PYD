@@ -1,122 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; margin: 0; }
-        .container { width: 100%; max-width: 400px; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; margin-bottom: 20px; color: #333; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn:disabled { background: #ccc; }
-        
-        /* Dashboard */
-        #homeLayout { display: none; }
-        .info-box { background: #f8f9fa; padding: 10px 15px; border-radius: 8px; border-left: 4px solid #007bff; margin-bottom: 10px; }
-        .label { font-size: 11px; color: #666; font-weight: bold; display: block; }
-        .val-input { width: 100%; border: none; background: transparent; font-size: 16px; color: #222; font-weight: bold; padding: 0; outline: none; }
-        .val-input:disabled { color: #444; opacity: 1; }
-        
-        .badge { font-size: 10px; padding: 3px 8px; border-radius: 10px; color: white; float: right; text-transform: uppercase; }
-        .admin-bg { background: #e74c3c; } .member-bg { background: #2ecc71; }
-        #saveBtn { background: #28a745; display: none; }
-        .update-text { font-size: 11px; color: #999; text-align: center; }
+        body { font-family: sans-serif; background: #f0f2f5; padding: 15px; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 10px auto; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
+        .btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .admin-section { border-top: 2px solid #eee; margin-top: 20px; padding-top: 15px; }
+        .info-box { background: #f8f9fa; padding: 8px; border-radius: 8px; margin-bottom: 5px; border-left: 4px solid #007bff; }
+        .label { font-size: 10px; color: #666; font-weight: bold; }
+        .val { font-size: 15px; font-weight: bold; color: #222; }
+        h3 { margin: 10px 0; color: #d93025; font-size: 16px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="loginLayout" class="card">
-        <h2>Login</h2>
-        <input type="text" id="u" placeholder="Username">
-        <input type="password" id="p" placeholder="Password">
-        <button class="btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
+<div class="card" id="loginLayout">
+    <h2 style="text-align:center">Member Login</h2>
+    <input type="text" id="u" placeholder="Username">
+    <input type="password" id="p" placeholder="Password">
+    <button class="btn" onclick="login()">Sign In</button>
+</div>
+
+<div id="homeLayout" style="display:none;">
+    <div class="card">
+        <h2 id="dispUser" style="margin:0; color:#007bff;">User</h2>
+        <p style="font-size:12px; color:gray;">Your Personal Data</p>
+        <div id="personalData"></div>
+        <button class="btn" style="background:#6c757d" onclick="location.reload()">Logout</button>
     </div>
 
-    <div id="homeLayout" class="card">
-        <span id="roleBadge" class="badge"></span>
-        <h2 id="dispUser" style="text-align:left; margin-top:0;">User</h2>
+    <div class="card admin-section" id="adminPanel" style="display:none;">
+        <h3>Admin: Update Member Data</h3>
+        <input type="text" id="searchUser" placeholder="Enter Member Username">
+        <button class="btn" style="background:#333" onclick="findMember()">Find Member</button>
         
-        <div class="info-box"><span class="label">Membership Fee</span><input class="val-input" id="fee" disabled></div>
-        <div class="info-box"><span class="label">Inkhâwm zât</span><input class="val-input" id="inkhawm" disabled></div>
-        <div class="info-box"><span class="label">Faiṭhâm</span><input class="val-input" id="faitham" disabled></div>
-        <div class="info-box"><span class="label">Target</span><input class="val-input" id="target" disabled></div>
-        <div class="info-box"><span class="label">Target pêk zât</span><input class="val-input" id="tpekat" disabled></div>
-        <div class="info-box"><span class="label">Target pêk ni</span><input class="val-input" id="tpni" disabled></div>
-
-        <p class="update-text">Last Update: <span id="lastUpdate">--</span></p>
-        
-        <button class="btn" id="saveBtn" onclick="updateData()">Save Changes</button>
-        <button class="btn" style="background:#6c757d" onclick="location.reload()">Logout</button>
+        <div id="editArea" style="display:none; margin-top:15px;">
+            <p>Updating: <b id="targetName"></b></p>
+            <input type="text" id="e_fee" placeholder="Membership Fee">
+            <input type="number" id="e_inkhawm" placeholder="Inkhâwm zât">
+            <input type="number" id="e_faitham" placeholder="Faiṭhâm">
+            <input type="number" id="e_target" placeholder="Target">
+            <input type="number" id="e_tpekat" placeholder="Target pêk zât">
+            <input type="text" id="e_tpni" placeholder="Target pêk ni (DD/MM/YYYY)">
+            <button class="btn" style="background:#28a745" onclick="saveUpdate()">Save Member Data</button>
+        </div>
     </div>
 </div>
 
 <script>
-    const api = 'https://script.google.com/macros/s/AKfycbzR7Llrj4Y0Rrx5z3489dLL1Og_VC1nNtGZNs8Ki99OTJBjcZONukkICfdhhmRtu0fH/exec';
-    let userRow = null;
+    const api = 'https://script.google.com/macros/s/AKfycbyTr4eIC8kAFe1GsueAeiZJhnacGGQ0Snu06hJxMdH1moHTrFqwJKYQbFtQagAygW2z/exec';
+    let editRow = null;
 
-    function handleLogin() {
+    function login() {
         const u = document.getElementById('u').value;
         const p = document.getElementById('p').value;
-        const btn = document.getElementById('loginBtn');
-        btn.innerText = "Checking...";
-        
-        fetch(`${api}?username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`)
+        fetch(`${api}?username=${u}&password=${p}`)
             .then(res => res.json())
             .then(data => {
                 if(data.result === "found") {
-                    userRow = data.row;
-                    showHome(data.userData);
-                } else { alert("Login Error: Check credentials."); btn.innerText = "Sign In"; }
-            })
-            .catch(() => alert("Network Error"));
+                    document.getElementById('loginLayout').style.display = 'none';
+                    document.getElementById('homeLayout').style.display = 'block';
+                    document.getElementById('dispUser').innerText = data.userData.username;
+                    
+                    // Show personal data
+                    let html = '';
+                    for(let key in data.userData) {
+                        if(key !== 'role' && key !== 'username') 
+                        html += `<div class="info-box"><span class="label">${key.toUpperCase()}</span><div class="val">${data.userData[key]}</div></div>`;
+                    }
+                    document.getElementById('personalData').innerHTML = html;
+
+                    // Show Admin Panel if applicable
+                    if(data.userData.role === "Admin") document.getElementById('adminPanel').style.display = 'block';
+                } else { alert("Login failed"); }
+            });
     }
 
-    function showHome(d) {
-        document.getElementById('loginLayout').style.display = 'none';
-        document.getElementById('homeLayout').style.display = 'block';
-        document.getElementById('dispUser').innerText = d.username;
-        document.getElementById('lastUpdate').innerText = d.update || 'N/A';
-
-        const fields = ['fee', 'inkhawm', 'faitham', 'target', 'tpekat', 'tpni'];
-        fields.forEach(f => document.getElementById(f).value = d[f] || '');
-
-        const badge = document.getElementById('roleBadge');
-        badge.innerText = d.role;
-        
-        if(d.role === "Admin") {
-            badge.className = "badge admin-bg";
-            fields.forEach(f => document.getElementById(f).disabled = false);
-            document.getElementById('saveBtn').style.display = 'block';
-        } else {
-            badge.className = "badge member-bg";
-        }
+    function findMember() {
+        const user = document.getElementById('searchUser').value;
+        fetch(`${api}?action=search&username=${user}`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.result === "found") {
+                    editRow = data.row;
+                    document.getElementById('targetName').innerText = user;
+                    document.getElementById('editArea').style.display = 'block';
+                    document.getElementById('e_fee').value = data.userData.fee;
+                    document.getElementById('e_inkhawm').value = data.userData.inkhawm;
+                    document.getElementById('e_faitham').value = data.userData.faitham;
+                    document.getElementById('e_target').value = data.userData.target;
+                    document.getElementById('e_tpekat').value = data.userData.tpekat;
+                    document.getElementById('e_tpni').value = data.userData.tpni;
+                } else { alert("Member not found"); }
+            });
     }
 
-    function updateData() {
-        const btn = document.getElementById('saveBtn');
-        btn.innerText = "Saving...";
-        
+    function saveUpdate() {
         const payload = {
-            row: userRow,
-            fee: document.getElementById('fee').value,
-            inkhawm: document.getElementById('inkhawm').value,
-            faitham: document.getElementById('faitham').value,
-            target: document.getElementById('target').value,
-            tpekat: document.getElementById('tpekat').value,
-            tpni: document.getElementById('tpni').value
+            row: editRow,
+            fee: document.getElementById('e_fee').value,
+            inkhawm: document.getElementById('e_inkhawm').value,
+            faitham: document.getElementById('e_faitham').value,
+            target: document.getElementById('e_target').value,
+            tpekat: document.getElementById('e_tpekat').value,
+            tpni: document.getElementById('e_tpni').value
         };
-
-        fetch(api, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        }).then(() => {
-            alert("Data Saved Successfully!");
-            btn.innerText = "Save Changes";
-        }).catch(() => alert("Save failed. Check script permissions."));
+        fetch(api, { method: 'POST', body: JSON.stringify(payload) })
+            .then(() => { alert("Member Updated!"); document.getElementById('editArea').style.display='none'; });
     }
 </script>
 </body>
