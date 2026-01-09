@@ -3,31 +3,27 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 10px; margin: 0; }
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 10px; margin: 0; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 10px auto; position: relative; }
-        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        
-        /* Member List Styling */
         #memberList { max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-top: 10px; }
-        .member-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .member-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .member-item:hover { background: #f0f7ff; }
-
-        /* Processing Overlay */
         #overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:1000; justify-content:center; align-items:center; font-weight:bold; color:#007bff; }
-        
-        .info-box { background: #f8f9fa; padding: 8px; border-radius: 8px; margin-bottom: 5px; border-left: 4px solid #007bff; }
-        .label { font-size: 10px; color: #666; font-weight: bold; }
-        .val { font-size: 15px; font-weight: bold; }
-        .add-text { font-size: 11px; color: green; font-weight: normal; }
+        .info-box { background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #007bff; }
+        .label { font-size: 11px; color: #666; font-weight: bold; }
+        .val { font-size: 16px; font-weight: bold; color: #222; }
+        .fixed-val { font-size: 13px; color: #d93025; font-weight: bold; margin-bottom: 10px; display: block; }
+        h3 { color: #333; font-size: 18px; margin-top: 0; }
     </style>
 </head>
 <body>
 
-<div id="overlay">PROCESSING... PLEASE WAIT</div>
+<div id="overlay">SAVING TO DATABASE...</div>
 
 <div class="card" id="loginLayout">
-    <h2 style="text-align:center">Member Login</h2>
+    <h2 style="text-align:center">Portal Login</h2>
     <input type="text" id="u" placeholder="Username">
     <input type="password" id="p" placeholder="Password">
     <button class="btn" onclick="login()">Sign In</button>
@@ -36,25 +32,34 @@
 <div id="homeLayout" style="display:none;">
     <div class="card">
         <h2 id="dispUser" style="margin:0; color:#007bff;">User</h2>
-        <div id="personalData" style="margin-top:10px;"></div>
-        <button class="btn" style="background:#6c757d" onclick="location.reload()">Logout</button>
+        <div id="personalData" style="margin-top:15px;"></div>
+        <button class="btn" style="background:#6c757d; margin-top:15px;" onclick="location.reload()">Logout</button>
     </div>
 
-    <div class="card" id="adminPanel" style="display:none; border-top: 4px solid #d93025;">
-        <h3>Admin Portal</h3>
-        <input type="text" id="searchBar" placeholder="Search Member Name..." onkeyup="filterMembers()">
+    <div class="card" id="adminPanel" style="display:none; border-top: 5px solid #d93025;">
+        <h3>Update Member Data</h3>
+        <input type="text" id="searchBar" placeholder="Search member name..." onkeyup="filterMembers()">
         <div id="memberList"></div>
         
-        <div id="editArea" style="display:none; margin-top:15px; background: #fffbe6; padding: 10px; border-radius: 8px;">
-            <p>Updating: <b id="targetName"></b></p>
-            <p style="font-size:11px; color:red;">*Enter amount to ADD to existing data</p>
-            <input type="text" id="e_fee" placeholder="Membership Fee (New Value)">
-            <input type="number" id="e_inkhawm" placeholder="Add Inkhâwm zât">
-            <input type="number" id="e_faitham" placeholder="Add Faiṭhâm">
-            <input type="number" id="e_target" placeholder="Add Target">
-            <input type="number" id="e_tpekat" placeholder="Add Target pêk zât">
-            <input type="text" id="e_tpni" placeholder="Target pêk ni (DD/MM/YYYY)">
-            <button class="btn" style="background:#28a745" onclick="saveUpdate()">Update & Add Data</button>
+        <div id="editArea" style="display:none; margin-top:20px; background: #fffbe6; padding: 15px; border-radius: 10px; border: 1px solid #ffe58f;">
+            <p style="margin-top:0;">Updating: <b id="targetName" style="color:#007bff; font-size:18px;"></b></p>
+            
+            <span class="fixed-val">Fee (Fixed): <span id="v_fee"></span></span>
+            <span class="fixed-val">Target (Fixed): <span id="v_target"></span></span>
+
+            <label class="label">ADD Inkhâwm zât</label>
+            <input type="number" id="e_inkhawm" value="0">
+            
+            <label class="label">ADD Faiṭhâm</label>
+            <input type="number" id="e_faitham" value="0">
+            
+            <label class="label">ADD Target pêk zât</label>
+            <input type="number" id="e_tpekat" value="0">
+            
+            <label class="label">Target pêk ni (Calendar)</label>
+            <input type="date" id="e_tpni">
+            
+            <button class="btn" style="background:#28a745; margin-top:10px;" onclick="saveUpdate()">Save & Add Values</button>
         </div>
     </div>
 </div>
@@ -70,7 +75,7 @@
         toggleLoad(true);
         const u = document.getElementById('u').value;
         const p = document.getElementById('p').value;
-        fetch(`${api}?username=${u}&password=${p}`)
+        fetch(`${api}?username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`)
             .then(res => res.json())
             .then(data => {
                 if(data.result === "found") {
@@ -79,7 +84,7 @@
                     document.getElementById('dispUser').innerText = data.userData.username;
                     
                     let html = '';
-                    const labels = {fee:"Fee", inkhawm:"Inkhâwm", faitham:"Faiṭhâm", target:"Target", tpekat:"Pêk zât", tpni:"Pêk ni", update:"Updated"};
+                    const labels = {fee:"Fee", inkhawm:"Inkhâwm", faitham:"Faiṭhâm", target:"Target", tpekat:"Pêk zât", tpni:"Pêk ni", update:"Last Update"};
                     for(let key in labels) {
                         html += `<div class="info-box"><span class="label">${labels[key]}</span><div class="val">${data.userData[key] || '0'}</div></div>`;
                     }
@@ -89,46 +94,45 @@
                         document.getElementById('adminPanel').style.display = 'block';
                         loadMemberList();
                     }
-                } else { alert("Login failed"); }
+                } else { alert("Login failed. Check username/password."); }
             })
             .finally(() => toggleLoad(false));
     }
 
     function loadMemberList() {
-        fetch(`${api}?action=list`)
-            .then(res => res.json())
-            .then(data => {
-                allMembers = data;
-                renderList(data);
-            });
+        fetch(`${api}?action=list`).then(res => res.json()).then(data => {
+            allMembers = data;
+            renderList(data);
+        });
     }
 
     function renderList(list) {
         const div = document.getElementById('memberList');
-        div.innerHTML = list.map(m => `<div class="member-item" onclick="selectMember('${m.username}', ${m.row})">${m.username}</div>`).join('');
+        div.innerHTML = list.map(m => `<div class="member-item" onclick="selectMember('${m.username}', ${m.row})"><span>${m.username}</span> <span style="color:#007bff; font-size:12px;">Edit ➔</span></div>`).join('');
     }
 
     function filterMembers() {
         const q = document.getElementById('searchBar').value.toLowerCase();
-        const filtered = allMembers.filter(m => m.username.toLowerCase().includes(q));
-        renderList(filtered);
+        renderList(allMembers.filter(m => m.username.toLowerCase().includes(q)));
     }
 
     function selectMember(name, row) {
         toggleLoad(true);
         selectedRow = row;
         document.getElementById('targetName').innerText = name;
+        
+        // Auto-set today's date in calendar
+        document.getElementById('e_tpni').valueAsDate = new Date();
+
         fetch(`${api}?action=fetchSingle&row=${row}`)
             .then(res => res.json())
             .then(data => {
                 document.getElementById('editArea').style.display = 'block';
-                // Reset inputs to 0 for adding
-                document.getElementById('e_fee').value = data.fee; 
+                document.getElementById('v_fee').innerText = data.fee;
+                document.getElementById('v_target').innerText = data.target;
                 document.getElementById('e_inkhawm').value = 0;
                 document.getElementById('e_faitham').value = 0;
-                document.getElementById('e_target').value = 0;
                 document.getElementById('e_tpekat').value = 0;
-                document.getElementById('e_tpni').value = data.tpni;
                 window.scrollTo(0, document.body.scrollHeight);
             })
             .finally(() => toggleLoad(false));
@@ -138,10 +142,8 @@
         toggleLoad(true);
         const payload = {
             row: selectedRow,
-            fee: document.getElementById('e_fee').value,
             inkhawm: document.getElementById('e_inkhawm').value,
             faitham: document.getElementById('e_faitham').value,
-            target: document.getElementById('e_target').value,
             tpekat: document.getElementById('e_tpekat').value,
             tpni: document.getElementById('e_tpni').value
         };
@@ -149,8 +151,8 @@
             .then(() => { 
                 alert("Updated successfully!"); 
                 document.getElementById('editArea').style.display = 'none';
-                loadMemberList(); // Refresh list
             })
+            .catch(() => alert("Error saving data."))
             .finally(() => toggleLoad(false));
     }
 </script>
