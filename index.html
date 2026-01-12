@@ -4,43 +4,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 10px; margin: 0; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 10px auto; position: relative; }
-        
-        .logo-container { text-align: center; margin-bottom: 20px; }
-        .logo-img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #007bff; background: #eee; }
-
-        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 10px auto; }
+        .logo-img { width: 80px; height: 80px; border-radius: 50%; display: block; margin: 0 auto 15px; border: 2px solid #007bff; }
         .btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         
-        .progress-container { width: 100%; background-color: #eee; border-radius: 5px; margin: 10px 0; display: none; }
-        .progress-bar { width: 0%; height: 4px; background-color: #007bff; border-radius: 5px; transition: width 0.3s; }
+        /* Summary Section */
+        .summary-grid { display: flex; gap: 10px; margin: 10px 0; }
+        .stat-box { flex: 1; background: #e7f3ff; padding: 10px; border-radius: 8px; text-align: center; }
+        .stat-val { font-size: 18px; font-weight: bold; color: #007bff; }
+        .stat-lab { font-size: 10px; color: #555; }
 
-        .num-btn-group { display: flex; gap: 10px; margin: 5px 0 15px 0; }
-        .n-btn { flex: 1; padding: 10px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        /* Chart Section */
+        .chart-container { margin-top: 15px; }
+        .bar-row { display: flex; align-items: center; margin-bottom: 5px; }
+        .bar-name { width: 80px; font-size: 11px; overflow: hidden; white-space: nowrap; }
+        .bar-track { flex: 1; background: #eee; height: 12px; border-radius: 6px; position: relative; }
+        .bar-fill { height: 100%; background: #28a745; border-radius: 6px; width: 0%; transition: width 1s; }
 
-        #memberList { max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-top: 10px; }
-        .member-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-
-        #overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:1000; justify-content:center; align-items:center; font-weight:bold; color:#007bff; }
-        
         .info-box { background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #007bff; }
         .label { font-size: 11px; color: #666; font-weight: bold; }
-        .val { font-size: 16px; font-weight: bold; color: #222; }
-        .fixed-val { font-size: 13px; color: #d93025; font-weight: bold; margin-bottom: 10px; display: block; }
-        
-        /* Dashboard display logic */
-        #personalData { display: none; margin-top: 15px; }
+        .val { font-size: 16px; font-weight: bold; }
+        #overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:1000; justify-content:center; align-items:center; font-weight:bold; color:#007bff; }
+        #memberList { max-height: 200px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px; }
+        .member-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="overlay">SAVING...</div>
+<div id="overlay">PROCESSING...</div>
 
 <div class="card" id="loginLayout">
-    <div class="logo-container">
-        <img class="logo-img" src="https://lh3.googleusercontent.com/d/13ZZCkPxOYD3aBMyOAehdarcuQnWSJ6YJ" onerror="this.src='https://via.placeholder.com/90?text=Logo'">
-    </div>
-    <h2 style="text-align:center; margin-top:0;">Member Login</h2>
+    <img class="logo-img" src="https://lh3.googleusercontent.com/d/13ZZCkPxOYD3aBMyOAehdarcuQnWSJ6YJ" onerror="this.src='https://via.placeholder.com/80?text=Logo'">
+    <h2 style="text-align:center">Member Login</h2>
     <input type="text" id="u" placeholder="Username">
     <input type="password" id="p" placeholder="Password">
     <button class="btn" onclick="login()">Sign In</button>
@@ -49,142 +45,115 @@
 <div id="homeLayout" style="display:none;">
     <div class="card">
         <h2 id="dispUser" style="margin:0; color:#007bff;">User</h2>
-        
         <button id="toggleDataBtn" class="btn" style="background:#00c2cb; display:none;" onclick="toggleAdminData()">My Data</button>
-        
-        <div id="personalData"></div>
-        <button class="btn" style="background:#6c757d; margin-top:15px;" onclick="location.reload()">Logout</button>
+        <div id="personalData" style="display:none; margin-top:15px;"></div>
+        <button class="btn" style="background:#6c757d; margin-top:10px;" onclick="location.reload()">Logout</button>
     </div>
 
-    <div class="card" id="adminPanel" style="display:none; border-top: 5px solid #d93025;">
-        <div id="listSection">
-            <h3 style="margin-top:0;">Member List</h3>
-            <div class="progress-container" id="p_container">
-                <div class="progress-bar" id="p_bar"></div>
+    <div id="adminPanel" style="display:none;">
+        <div class="card" style="border-top: 5px solid #007bff;">
+            <h3>Database Summary</h3>
+            <div class="summary-grid">
+                <div class="stat-box"><div class="stat-val" id="sumFaitham">0</div><div class="stat-lab">Total Faiṭhâm</div></div>
+                <div class="stat-box"><div class="stat-val" id="sumTarget">0</div><div class="stat-lab">Total Target Pêk</div></div>
             </div>
-            <input type="text" id="searchBar" placeholder="Search name..." onkeyup="filterMembers()">
-            <div id="memberList"></div>
-        </div>
-        
-        <div id="editArea" style="display:none; background: #fffbe6; padding: 15px; border-radius: 10px; border: 1px solid #ffe58f;">
-            <p style="margin:0 0 10px 0;">Updating: <b id="targetName" style="color:#007bff; font-size:18px;"></b></p>
-            <span class="fixed-val">Fee: <span id="v_fee"></span> | Target: <span id="v_target"></span></span>
-
-            <label class="label">Inkhâwm zât (Quick Add)</label>
-            <div class="num-btn-group">
-                <button class="n-btn" onclick="addVal('e_inkhawm', 1)">+ 1</button>
-                <button class="n-btn" onclick="addVal('e_inkhawm', 2)">+ 2</button>
-            </div>
-            <input type="number" id="e_inkhawm" value="0">
-            <label class="label">ADD Faiṭhâm</label>
-            <input type="number" id="e_faitham" value="0">
-            <label class="label">ADD Target pêk zât</label>
-            <input type="number" id="e_tpekat" value="0">
-            <label class="label">Target pêk ni</label>
-            <input type="date" id="e_tpni">
             
-            <button class="btn" style="background:#28a745; margin-top:10px;" onclick="saveUpdate()">Save & Add</button>
-            <button class="btn" style="background:#ff4757; margin-top:5px;" onclick="cancelUpdate()">Cancel</button>
+            <div class="chart-container">
+                <p style="font-size:12px; font-weight:bold; margin-bottom:5px;">Target Progress (Top Members)</p>
+                <div id="chartBars"></div>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 5px solid #d93025;">
+            <div id="listSection">
+                <h3>Update Members</h3>
+                <input type="text" id="searchBar" placeholder="Search name..." onkeyup="filterMembers()">
+                <div id="memberList"></div>
+            </div>
+
+            <div id="editArea" style="display:none; background:#fffbe6; padding:15px; border-radius:10px;">
+                <p>Updating: <b id="targetName"></b></p>
+                <input type="number" id="e_inkhawm" placeholder="Add Inkhâwm">
+                <input type="number" id="e_faitham" placeholder="Add Faiṭhâm">
+                <input type="number" id="e_tpekat" placeholder="Add Target Pêk">
+                <input type="date" id="e_tpni">
+                <button class="btn" style="background:#28a745" onclick="confirmSave()">Save Changes</button>
+                <button class="btn" style="background:#ff4757" onclick="cancelUpdate()">Cancel</button>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
     const api = 'https://script.google.com/macros/s/AKfycbyTr4eIC8kAFe1GsueAeiZJhnacGGQ0Snu06hJxMdH1moHTrFqwJKYQbFtQagAygW2z/exec';
-    let allMembers = [];
     let selectedRow = null;
 
-    function toggleLoad(show) { document.getElementById('overlay').style.display = show ? 'flex' : 'none'; }
-    function addVal(id, num) { 
-        let el = document.getElementById(id); 
-        el.value = (parseInt(el.value) || 0) + num; 
-    }
-
-    function toggleAdminData() {
-        const pData = document.getElementById('personalData');
-        const btn = document.getElementById('toggleDataBtn');
-        if (pData.style.display === 'none' || pData.style.display === '') {
-            pData.style.display = 'block';
-            btn.innerText = 'Hide Data';
-            btn.style.background = '#ff4757';
-        } else {
-            pData.style.display = 'none';
-            btn.innerText = 'My Data';
-            btn.style.background = '#00c2cb';
-        }
-    }
-
+    function toggleLoad(s) { document.getElementById('overlay').style.display = s ? 'flex' : 'none'; }
+    
     function login() {
         toggleLoad(true);
-        const u = document.getElementById('u').value;
-        const p = document.getElementById('p').value;
+        const u = document.getElementById('u').value, p = document.getElementById('p').value;
         fetch(`${api}?username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`)
-            .then(res => res.json())
-            .then(data => {
+            .then(res => res.json()).then(data => {
                 if(data.result === "found") {
                     document.getElementById('loginLayout').style.display = 'none';
                     document.getElementById('homeLayout').style.display = 'block';
                     document.getElementById('dispUser').innerText = data.userData.username;
                     
                     let html = '';
-                    const labels = {fee:"Fee", inkhawm:"Inkhâwm", faitham:"Faiṭhâm", target:"Target", tpekat:"Pêk zât", tpni:"Pêk ni", update:"Last Update"};
-                    for(let key in labels) {
-                        html += `<div class="info-box"><span class="label">${labels[key]}</span><div class="val">${data.userData[key] || '0'}</div></div>`;
-                    }
+                    for(let k in data.userData) if(!['role','username'].includes(k)) 
+                        html += `<div class="info-box"><span class="label">${k.toUpperCase()}</span><div class="val">${data.userData[k] || '0'}</div></div>`;
                     document.getElementById('personalData').innerHTML = html;
 
                     if(data.userData.role === "Admin") {
                         document.getElementById('toggleDataBtn').style.display = 'block';
                         document.getElementById('adminPanel').style.display = 'block';
-                        loadMemberList();
+                        loadAdminPortal();
                     } else {
                         document.getElementById('personalData').style.display = 'block';
                     }
-                } else { alert("User not found!"); }
-            })
-            .finally(() => toggleLoad(false));
+                } else { alert("Login Error"); }
+            }).finally(() => toggleLoad(false));
     }
 
-    function loadMemberList() {
-        const pCont = document.getElementById('p_container');
-        const pBar = document.getElementById('p_bar');
-        pCont.style.display = 'block';
-        pBar.style.width = '30%';
+    function toggleAdminData() {
+        const d = document.getElementById('personalData'), b = document.getElementById('toggleDataBtn');
+        d.style.display = d.style.display === 'none' ? 'block' : 'none';
+        b.innerText = d.style.display === 'none' ? 'My Data' : 'Hide Data';
+    }
+
+    function loadAdminPortal() {
+        // Load Summary & Chart
+        fetch(`${api}?action=getStats`).then(res => res.json()).then(data => {
+            document.getElementById('sumFaitham').innerText = data.totalFaitham;
+            document.getElementById('sumTarget').innerText = data.totalTargetPek;
+            
+            const maxVal = Math.max(...data.chartData.map(d => d.val), 1);
+            let chartHtml = '';
+            data.chartData.slice(0, 5).forEach(d => {
+                let width = (d.val / maxVal) * 100;
+                chartHtml += `<div class="bar-row"><div class="bar-name">${d.name}</div><div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div></div>`;
+            });
+            document.getElementById('chartBars').innerHTML = chartHtml;
+        });
+        
+        // Load List
         fetch(`${api}?action=list`).then(res => res.json()).then(data => {
-            pBar.style.width = '100%';
-            setTimeout(() => { pCont.style.display = 'none'; }, 500);
             allMembers = data;
             renderList(data);
         });
     }
 
-    function renderList(list) {
-        const div = document.getElementById('memberList');
-        div.innerHTML = list.map(m => `<div class="member-item" onclick="selectMember('${m.username}', ${m.row})"><span>${m.username}</span> <span style="color:#007bff; font-size:12px;">Edit ➔</span></div>`).join('');
+    function renderList(l) {
+        document.getElementById('memberList').innerHTML = l.map(m => `<div class="member-item" onclick="selectMember('${m.username}', ${m.row})">${m.username} ➔</div>`).join('');
     }
 
-    function filterMembers() {
-        const q = document.getElementById('searchBar').value.toLowerCase();
-        renderList(allMembers.filter(m => m.username.toLowerCase().includes(q)));
-    }
-
-    function selectMember(name, row) {
-        toggleLoad(true);
-        selectedRow = row;
-        document.getElementById('targetName').innerText = name;
-        document.getElementById('e_tpni').valueAsDate = new Date();
+    function selectMember(n, r) {
+        selectedRow = r;
+        document.getElementById('targetName').innerText = n;
         document.getElementById('listSection').style.display = 'none';
-        fetch(`${api}?action=fetchSingle&row=${row}`)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('editArea').style.display = 'block';
-                document.getElementById('v_fee').innerText = data.fee;
-                document.getElementById('v_target').innerText = data.target;
-                document.getElementById('e_inkhawm').value = 0;
-                document.getElementById('e_faitham').value = 0;
-                document.getElementById('e_tpekat').value = 0;
-            })
-            .finally(() => toggleLoad(false));
+        document.getElementById('editArea').style.display = 'block';
+        document.getElementById('e_tpni').valueAsDate = new Date();
     }
 
     function cancelUpdate() {
@@ -192,22 +161,28 @@
         document.getElementById('listSection').style.display = 'block';
     }
 
+    // No 5: Confirmation Popup
+    function confirmSave() {
+        if (confirm("Hriattirna: He member data hi i update duh tak tak em?")) {
+            saveUpdate();
+        }
+    }
+
     function saveUpdate() {
         toggleLoad(true);
         const payload = {
             row: selectedRow,
-            inkhawm: document.getElementById('e_inkhawm').value,
-            faitham: document.getElementById('e_faitham').value,
-            tpekat: document.getElementById('e_tpekat').value,
+            inkhawm: document.getElementById('e_inkhawm').value || 0,
+            faitham: document.getElementById('e_faitham').value || 0,
+            tpekat: document.getElementById('e_tpekat').value || 0,
             tpni: document.getElementById('e_tpni').value
         };
         fetch(api, { method: 'POST', body: JSON.stringify(payload) })
             .then(() => { 
                 alert("Success!"); 
                 cancelUpdate();
-                loadMemberList();
-            })
-            .finally(() => toggleLoad(false));
+                loadAdminPortal(); // Refresh Summary
+            }).finally(() => toggleLoad(false));
     }
 </script>
 </body>
