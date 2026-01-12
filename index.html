@@ -5,23 +5,30 @@
     <style>
         body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 10px; margin: 0; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 10px auto; position: relative; }
+        
         .logo-container { text-align: center; margin-bottom: 20px; }
-        .logo-container img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #007bff; }
+        .logo-img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #007bff; background: #eee; }
+
         input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        
         .progress-container { width: 100%; background-color: #eee; border-radius: 5px; margin: 10px 0; display: none; }
         .progress-bar { width: 0%; height: 4px; background-color: #007bff; border-radius: 5px; transition: width 0.3s; }
+
         .num-btn-group { display: flex; gap: 10px; margin: 5px 0 15px 0; }
         .n-btn { flex: 1; padding: 10px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
         #memberList { max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-top: 10px; }
-        .member-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
+        .member-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+
         #overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:1000; justify-content:center; align-items:center; font-weight:bold; color:#007bff; }
+        
         .info-box { background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #007bff; }
         .label { font-size: 11px; color: #666; font-weight: bold; }
         .val { font-size: 16px; font-weight: bold; color: #222; }
         .fixed-val { font-size: 13px; color: #d93025; font-weight: bold; margin-bottom: 10px; display: block; }
         
-        /* New Toggle Style */
+        /* Dashboard display logic */
         #personalData { display: none; margin-top: 15px; }
     </style>
 </head>
@@ -31,9 +38,9 @@
 
 <div class="card" id="loginLayout">
     <div class="logo-container">
-        <img src="https://lh3.googleusercontent.com/d/13ZZCkPxOYD3aBMyOAehdarcuQnWSJ6YJ" alt="Logo">
+        <img class="logo-img" src="https://lh3.googleusercontent.com/d/13ZZCkPxOYD3aBMyOAehdarcuQnWSJ6YJ" onerror="this.src='https://via.placeholder.com/90?text=Logo'">
     </div>
-    <h2 style="text-align:center; margin-top:0;">Portal Login</h2>
+    <h2 style="text-align:center; margin-top:0;">Member Login</h2>
     <input type="text" id="u" placeholder="Username">
     <input type="password" id="p" placeholder="Password">
     <button class="btn" onclick="login()">Sign In</button>
@@ -51,19 +58,19 @@
 
     <div class="card" id="adminPanel" style="display:none; border-top: 5px solid #d93025;">
         <div id="listSection">
-            <h3>Update Member Data</h3>
+            <h3 style="margin-top:0;">Member List</h3>
             <div class="progress-container" id="p_container">
                 <div class="progress-bar" id="p_bar"></div>
             </div>
-            <input type="text" id="searchBar" placeholder="Search member name..." onkeyup="filterMembers()">
+            <input type="text" id="searchBar" placeholder="Search name..." onkeyup="filterMembers()">
             <div id="memberList"></div>
         </div>
         
-        <div id="editArea" style="display:none; margin-top:10px; background: #fffbe6; padding: 15px; border-radius: 10px; border: 1px solid #ffe58f;">
-            <p style="margin-top:0;">Updating: <b id="targetName" style="color:#007bff; font-size:18px;"></b></p>
+        <div id="editArea" style="display:none; background: #fffbe6; padding: 15px; border-radius: 10px; border: 1px solid #ffe58f;">
+            <p style="margin:0 0 10px 0;">Updating: <b id="targetName" style="color:#007bff; font-size:18px;"></b></p>
             <span class="fixed-val">Fee: <span id="v_fee"></span> | Target: <span id="v_target"></span></span>
 
-            <label class="label">Inkhâwm zât (Add 1 or 2)</label>
+            <label class="label">Inkhâwm zât (Quick Add)</label>
             <div class="num-btn-group">
                 <button class="n-btn" onclick="addVal('e_inkhawm', 1)">+ 1</button>
                 <button class="n-btn" onclick="addVal('e_inkhawm', 2)">+ 2</button>
@@ -86,12 +93,13 @@
     const api = 'https://script.google.com/macros/s/AKfycbyTr4eIC8kAFe1GsueAeiZJhnacGGQ0Snu06hJxMdH1moHTrFqwJKYQbFtQagAygW2z/exec';
     let allMembers = [];
     let selectedRow = null;
-    let isAdmin = false;
 
     function toggleLoad(show) { document.getElementById('overlay').style.display = show ? 'flex' : 'none'; }
-    function addVal(id, num) { let el = document.getElementById(id); el.value = parseInt(el.value) + num; }
+    function addVal(id, num) { 
+        let el = document.getElementById(id); 
+        el.value = (parseInt(el.value) || 0) + num; 
+    }
 
-    // Toggle Admin's Personal Data
     function toggleAdminData() {
         const pData = document.getElementById('personalData');
         const btn = document.getElementById('toggleDataBtn');
@@ -126,15 +134,13 @@
                     document.getElementById('personalData').innerHTML = html;
 
                     if(data.userData.role === "Admin") {
-                        isAdmin = true;
                         document.getElementById('toggleDataBtn').style.display = 'block';
-                        document.getElementById('personalData').style.display = 'none'; // Ensure hidden initially
                         document.getElementById('adminPanel').style.display = 'block';
                         loadMemberList();
                     } else {
                         document.getElementById('personalData').style.display = 'block';
                     }
-                } else { alert("Login failed."); }
+                } else { alert("User not found!"); }
             })
             .finally(() => toggleLoad(false));
     }
@@ -154,7 +160,7 @@
 
     function renderList(list) {
         const div = document.getElementById('memberList');
-        div.innerHTML = list.map(m => `<div class="member-item" onclick="selectMember('${m.username}', ${m.row})"><span>${m.username}</span> <span>Edit ➔</span></div>`).join('');
+        div.innerHTML = list.map(m => `<div class="member-item" onclick="selectMember('${m.username}', ${m.row})"><span>${m.username}</span> <span style="color:#007bff; font-size:12px;">Edit ➔</span></div>`).join('');
     }
 
     function filterMembers() {
@@ -167,10 +173,7 @@
         selectedRow = row;
         document.getElementById('targetName').innerText = name;
         document.getElementById('e_tpni').valueAsDate = new Date();
-        
-        // Hide list section when editing
         document.getElementById('listSection').style.display = 'none';
-
         fetch(`${api}?action=fetchSingle&row=${row}`)
             .then(res => res.json())
             .then(data => {
@@ -201,8 +204,7 @@
         fetch(api, { method: 'POST', body: JSON.stringify(payload) })
             .then(() => { 
                 alert("Success!"); 
-                document.getElementById('editArea').style.display = 'none';
-                document.getElementById('listSection').style.display = 'block';
+                cancelUpdate();
                 loadMemberList();
             })
             .finally(() => toggleLoad(false));
