@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,30 +5,24 @@
     <style>
         body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 10px; margin: 0; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 10px auto; position: relative; }
-        
-        /* Logo Styling */
         .logo-container { text-align: center; margin-bottom: 20px; }
         .logo-container img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #007bff; }
-
         input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        
-        /* Progress Line */
         .progress-container { width: 100%; background-color: #eee; border-radius: 5px; margin: 10px 0; display: none; }
         .progress-bar { width: 0%; height: 4px; background-color: #007bff; border-radius: 5px; transition: width 0.3s; }
-
-        /* Quick Number Buttons */
         .num-btn-group { display: flex; gap: 10px; margin: 5px 0 15px 0; }
         .n-btn { flex: 1; padding: 10px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .n-btn:active { background: #dee2e6; }
-
-        #memberList { max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-top: 10px; }
+        #memberList { max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-top: 10px; }
         .member-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
         #overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:1000; justify-content:center; align-items:center; font-weight:bold; color:#007bff; }
         .info-box { background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #007bff; }
         .label { font-size: 11px; color: #666; font-weight: bold; }
         .val { font-size: 16px; font-weight: bold; color: #222; }
         .fixed-val { font-size: 13px; color: #d93025; font-weight: bold; margin-bottom: 10px; display: block; }
+        
+        /* New Toggle Style */
+        #personalData { display: none; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -49,23 +42,25 @@
 <div id="homeLayout" style="display:none;">
     <div class="card">
         <h2 id="dispUser" style="margin:0; color:#007bff;">User</h2>
-        <div id="personalData" style="margin-top:15px;"></div>
+        
+        <button id="toggleDataBtn" class="btn" style="background:#00c2cb; display:none;" onclick="toggleAdminData()">My Data</button>
+        
+        <div id="personalData"></div>
         <button class="btn" style="background:#6c757d; margin-top:15px;" onclick="location.reload()">Logout</button>
     </div>
 
     <div class="card" id="adminPanel" style="display:none; border-top: 5px solid #d93025;">
-        <h3>Update Member Data</h3>
-        
-        <div class="progress-container" id="p_container">
-            <div class="progress-bar" id="p_bar"></div>
+        <div id="listSection">
+            <h3>Update Member Data</h3>
+            <div class="progress-container" id="p_container">
+                <div class="progress-bar" id="p_bar"></div>
+            </div>
+            <input type="text" id="searchBar" placeholder="Search member name..." onkeyup="filterMembers()">
+            <div id="memberList"></div>
         </div>
-
-        <input type="text" id="searchBar" placeholder="Search member name..." onkeyup="filterMembers()">
-        <div id="memberList"></div>
         
-        <div id="editArea" style="display:none; margin-top:20px; background: #fffbe6; padding: 15px; border-radius: 10px; border: 1px solid #ffe58f;">
+        <div id="editArea" style="display:none; margin-top:10px; background: #fffbe6; padding: 15px; border-radius: 10px; border: 1px solid #ffe58f;">
             <p style="margin-top:0;">Updating: <b id="targetName" style="color:#007bff; font-size:18px;"></b></p>
-            
             <span class="fixed-val">Fee: <span id="v_fee"></span> | Target: <span id="v_target"></span></span>
 
             <label class="label">Inkhâwm zât (Add 1 or 2)</label>
@@ -74,17 +69,15 @@
                 <button class="n-btn" onclick="addVal('e_inkhawm', 2)">+ 2</button>
             </div>
             <input type="number" id="e_inkhawm" value="0">
-            
             <label class="label">ADD Faiṭhâm</label>
             <input type="number" id="e_faitham" value="0">
-            
             <label class="label">ADD Target pêk zât</label>
             <input type="number" id="e_tpekat" value="0">
-            
             <label class="label">Target pêk ni</label>
             <input type="date" id="e_tpni">
             
             <button class="btn" style="background:#28a745; margin-top:10px;" onclick="saveUpdate()">Save & Add</button>
+            <button class="btn" style="background:#ff4757; margin-top:5px;" onclick="cancelUpdate()">Cancel</button>
         </div>
     </div>
 </div>
@@ -93,13 +86,24 @@
     const api = 'https://script.google.com/macros/s/AKfycbyTr4eIC8kAFe1GsueAeiZJhnacGGQ0Snu06hJxMdH1moHTrFqwJKYQbFtQagAygW2z/exec';
     let allMembers = [];
     let selectedRow = null;
+    let isAdmin = false;
 
     function toggleLoad(show) { document.getElementById('overlay').style.display = show ? 'flex' : 'none'; }
+    function addVal(id, num) { let el = document.getElementById(id); el.value = parseInt(el.value) + num; }
 
-    // Logic for the quick +1 / +2 buttons
-    function addVal(id, num) {
-        let el = document.getElementById(id);
-        el.value = parseInt(el.value) + num;
+    // Toggle Admin's Personal Data
+    function toggleAdminData() {
+        const pData = document.getElementById('personalData');
+        const btn = document.getElementById('toggleDataBtn');
+        if (pData.style.display === 'none' || pData.style.display === '') {
+            pData.style.display = 'block';
+            btn.innerText = 'Hide Data';
+            btn.style.background = '#ff4757';
+        } else {
+            pData.style.display = 'none';
+            btn.innerText = 'My Data';
+            btn.style.background = '#00c2cb';
+        }
     }
 
     function login() {
@@ -122,8 +126,13 @@
                     document.getElementById('personalData').innerHTML = html;
 
                     if(data.userData.role === "Admin") {
+                        isAdmin = true;
+                        document.getElementById('toggleDataBtn').style.display = 'block';
+                        document.getElementById('personalData').style.display = 'none'; // Ensure hidden initially
                         document.getElementById('adminPanel').style.display = 'block';
                         loadMemberList();
+                    } else {
+                        document.getElementById('personalData').style.display = 'block';
                     }
                 } else { alert("Login failed."); }
             })
@@ -134,8 +143,7 @@
         const pCont = document.getElementById('p_container');
         const pBar = document.getElementById('p_bar');
         pCont.style.display = 'block';
-        pBar.style.width = '30%'; // Initial progress
-
+        pBar.style.width = '30%';
         fetch(`${api}?action=list`).then(res => res.json()).then(data => {
             pBar.style.width = '100%';
             setTimeout(() => { pCont.style.display = 'none'; }, 500);
@@ -159,6 +167,9 @@
         selectedRow = row;
         document.getElementById('targetName').innerText = name;
         document.getElementById('e_tpni').valueAsDate = new Date();
+        
+        // Hide list section when editing
+        document.getElementById('listSection').style.display = 'none';
 
         fetch(`${api}?action=fetchSingle&row=${row}`)
             .then(res => res.json())
@@ -171,6 +182,11 @@
                 document.getElementById('e_tpekat').value = 0;
             })
             .finally(() => toggleLoad(false));
+    }
+
+    function cancelUpdate() {
+        document.getElementById('editArea').style.display = 'none';
+        document.getElementById('listSection').style.display = 'block';
     }
 
     function saveUpdate() {
@@ -186,6 +202,7 @@
             .then(() => { 
                 alert("Success!"); 
                 document.getElementById('editArea').style.display = 'none';
+                document.getElementById('listSection').style.display = 'block';
                 loadMemberList();
             })
             .finally(() => toggleLoad(false));
