@@ -9,13 +9,11 @@
         .btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         
-        /* Summary Section */
         .summary-grid { display: flex; gap: 10px; margin: 10px 0; }
         .stat-box { flex: 1; background: #e7f3ff; padding: 10px; border-radius: 8px; text-align: center; }
         .stat-val { font-size: 18px; font-weight: bold; color: #007bff; }
         .stat-lab { font-size: 10px; color: #555; }
 
-        /* Chart Section */
         .chart-container { margin-top: 15px; }
         .bar-row { display: flex; align-items: center; margin-bottom: 5px; }
         .bar-name { width: 80px; font-size: 11px; overflow: hidden; white-space: nowrap; }
@@ -26,8 +24,10 @@
         .label { font-size: 11px; color: #666; font-weight: bold; }
         .val { font-size: 16px; font-weight: bold; }
         #overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:1000; justify-content:center; align-items:center; font-weight:bold; color:#007bff; }
-        #memberList { max-height: 200px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px; }
-        .member-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+        #memberList { max-height: 200px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px; border-radius: 8px; }
+        .member-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
+        .num-btn-group { display: flex; gap: 10px; margin: 5px 0 15px 0; }
+        .n-btn { flex: 1; padding: 10px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 8px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -36,7 +36,7 @@
 
 <div class="card" id="loginLayout">
     <img class="logo-img" src="https://lh3.googleusercontent.com/d/13ZZCkPxOYD3aBMyOAehdarcuQnWSJ6YJ" onerror="this.src='https://via.placeholder.com/80?text=Logo'">
-    <h2 style="text-align:center">Member Login</h2>
+    <h2 style="text-align:center">Portal Login</h2>
     <input type="text" id="u" placeholder="Username">
     <input type="password" id="p" placeholder="Password">
     <button class="btn" onclick="login()">Sign In</button>
@@ -52,14 +52,13 @@
 
     <div id="adminPanel" style="display:none;">
         <div class="card" style="border-top: 5px solid #007bff;">
-            <h3>Database Summary</h3>
+            <h3>Summary</h3>
             <div class="summary-grid">
-                <div class="stat-box"><div class="stat-val" id="sumFaitham">0</div><div class="stat-lab">Total Faiṭhâm</div></div>
-                <div class="stat-box"><div class="stat-val" id="sumTarget">0</div><div class="stat-lab">Total Target Pêk</div></div>
+                <div class="stat-box"><div class="stat-val" id="sumFaitham">0</div><div class="stat-lab">Faiṭhâm Total</div></div>
+                <div class="stat-box"><div class="stat-val" id="sumTarget">0</div><div class="stat-lab">Target Pêk Total</div></div>
             </div>
-            
             <div class="chart-container">
-                <p style="font-size:12px; font-weight:bold; margin-bottom:5px;">Target Progress (Top Members)</p>
+                <p style="font-size:12px; font-weight:bold;">Progress Chart</p>
                 <div id="chartBars"></div>
             </div>
         </div>
@@ -73,7 +72,12 @@
 
             <div id="editArea" style="display:none; background:#fffbe6; padding:15px; border-radius:10px;">
                 <p>Updating: <b id="targetName"></b></p>
-                <input type="number" id="e_inkhawm" placeholder="Add Inkhâwm">
+                <label class="label">Add Inkhâwm</label>
+                <div class="num-btn-group">
+                    <button class="n-btn" onclick="addVal('e_inkhawm', 1)">+ 1</button>
+                    <button class="n-btn" onclick="addVal('e_inkhawm', 2)">+ 2</button>
+                </div>
+                <input type="number" id="e_inkhawm" value="0">
                 <input type="number" id="e_faitham" placeholder="Add Faiṭhâm">
                 <input type="number" id="e_tpekat" placeholder="Add Target Pêk">
                 <input type="date" id="e_tpni">
@@ -86,9 +90,11 @@
 
 <script>
     const api = 'https://script.google.com/macros/s/AKfycbyTr4eIC8kAFe1GsueAeiZJhnacGGQ0Snu06hJxMdH1moHTrFqwJKYQbFtQagAygW2z/exec';
+    let allMembers = [];
     let selectedRow = null;
 
     function toggleLoad(s) { document.getElementById('overlay').style.display = s ? 'flex' : 'none'; }
+    function addVal(id, num) { let el = document.getElementById(id); el.value = (parseInt(el.value) || 0) + num; }
     
     function login() {
         toggleLoad(true);
@@ -101,8 +107,10 @@
                     document.getElementById('dispUser').innerText = data.userData.username;
                     
                     let html = '';
-                    for(let k in data.userData) if(!['role','username'].includes(k)) 
-                        html += `<div class="info-box"><span class="label">${k.toUpperCase()}</span><div class="val">${data.userData[k] || '0'}</div></div>`;
+                    const labels = {fee:"Membership Fee", inkhawm:"Inkhâwm zât", faitham:"Faiṭhâm", target:"Target Amount", tpekat:"Target Pêk zât", tpni:"Pêk ni"};
+                    for(let k in labels) {
+                        html += `<div class="info-box"><span class="label">${labels[k]}</span><div class="val">${data.userData[k] || '0'}</div></div>`;
+                    }
                     document.getElementById('personalData').innerHTML = html;
 
                     if(data.userData.role === "Admin") {
@@ -112,7 +120,7 @@
                     } else {
                         document.getElementById('personalData').style.display = 'block';
                     }
-                } else { alert("Login Error"); }
+                } else { alert("User not found!"); }
             }).finally(() => toggleLoad(false));
     }
 
@@ -123,11 +131,9 @@
     }
 
     function loadAdminPortal() {
-        // Load Summary & Chart
         fetch(`${api}?action=getStats`).then(res => res.json()).then(data => {
             document.getElementById('sumFaitham').innerText = data.totalFaitham;
             document.getElementById('sumTarget').innerText = data.totalTargetPek;
-            
             const maxVal = Math.max(...data.chartData.map(d => d.val), 1);
             let chartHtml = '';
             data.chartData.slice(0, 5).forEach(d => {
@@ -136,8 +142,6 @@
             });
             document.getElementById('chartBars').innerHTML = chartHtml;
         });
-        
-        // Load List
         fetch(`${api}?action=list`).then(res => res.json()).then(data => {
             allMembers = data;
             renderList(data);
@@ -145,7 +149,12 @@
     }
 
     function renderList(l) {
-        document.getElementById('memberList').innerHTML = l.map(m => `<div class="member-item" onclick="selectMember('${m.username}', ${m.row})">${m.username} ➔</div>`).join('');
+        document.getElementById('memberList').innerHTML = l.map(m => `<div class="member-item" onclick="selectMember('${m.username}', ${m.row})"><span>${m.username}</span> <span>Edit ➔</span></div>`).join('');
+    }
+
+    function filterMembers() {
+        const q = document.getElementById('searchBar').value.toLowerCase();
+        renderList(allMembers.filter(m => m.username.toLowerCase().includes(q)));
     }
 
     function selectMember(n, r) {
@@ -154,6 +163,7 @@
         document.getElementById('listSection').style.display = 'none';
         document.getElementById('editArea').style.display = 'block';
         document.getElementById('e_tpni').valueAsDate = new Date();
+        document.getElementById('e_inkhawm').value = 0;
     }
 
     function cancelUpdate() {
@@ -161,11 +171,8 @@
         document.getElementById('listSection').style.display = 'block';
     }
 
-    // No 5: Confirmation Popup
     function confirmSave() {
-        if (confirm("Hriattirna: He member data hi i update duh tak tak em?")) {
-            saveUpdate();
-        }
+        if (confirm("He member data hi i update duh tak tak em?")) saveUpdate();
     }
 
     function saveUpdate() {
@@ -179,9 +186,9 @@
         };
         fetch(api, { method: 'POST', body: JSON.stringify(payload) })
             .then(() => { 
-                alert("Success!"); 
+                alert("Updated!"); 
                 cancelUpdate();
-                loadAdminPortal(); // Refresh Summary
+                loadAdminPortal();
             }).finally(() => toggleLoad(false));
     }
 </script>
