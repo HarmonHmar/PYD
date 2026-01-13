@@ -10,6 +10,15 @@
         .btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         
+        /* Progress Bar Styles */
+        .progress-container { width: 100%; background-color: #eee; border-radius: 10px; margin: 10px 0; display: none; overflow: hidden; }
+        .progress-bar { width: 0%; height: 6px; background-color: #007bff; transition: width 0.4s ease; }
+
+        /* Report Section */
+        .report-section { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; text-align: center; }
+        .report-title { font-size: 13px; color: #666; font-weight: bold; margin-bottom: 10px; display: block; }
+        .wa-btn { display: inline-block; padding: 8px 12px; margin: 4px; border-radius: 20px; background: #25D366; color: white; text-decoration: none; font-size: 12px; font-weight: bold; }
+
         .info-box { background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #007bff; }
         .label { font-size: 11px; color: #666; font-weight: bold; display: block; margin-top: 5px; }
         .val { font-size: 16px; font-weight: bold; color: #222; }
@@ -18,12 +27,10 @@
         
         #memberList { max-height: 350px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px; border-radius: 8px; }
         .member-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .member-item:hover { background: #f1f1f1; }
 
         .num-btn-group { display: flex; gap: 10px; margin: 5px 0 15px 0; }
         .n-btn { flex: 1; padding: 10px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 8px; font-weight: bold; cursor: pointer; }
         
-        /* Dashboard Toggling */
         #personalData { display: none; margin-top: 15px; }
     </style>
 </head>
@@ -37,14 +44,20 @@
     <input type="text" id="u" placeholder="Username">
     <input type="password" id="p" placeholder="Password">
     <button class="btn" onclick="login()">Sign In</button>
+
+    <div class="report-section">
+        <span class="report-title">Report / Complaint</span>
+        <a href="https://wa.me/919362666588" class="wa-btn" target="_blank">Admin 1</a>
+        <a href="https://wa.me/918415897598" class="wa-btn" target="_blank">Admin 2</a>
+        <a href="https://wa.me/919863048584" class="wa-btn" target="_blank">Admin 3</a>
+        <a href="https://wa.me/917639478900" class="wa-btn" style="background:#007bff;" target="_blank">Developer</a>
+    </div>
 </div>
 
 <div id="homeLayout" style="display:none;">
     <div class="card">
         <h2 id="dispUser" style="margin:0; color:#007bff;">User</h2>
-        
         <button id="toggleDataBtn" class="btn" style="background:#00c2cb; display:none;" onclick="toggleAdminData()">My Data</button>
-        
         <div id="personalData"></div>
         <button class="btn" style="background:#6c757d; margin-top:15px;" onclick="location.reload()">Logout</button>
     </div>
@@ -52,6 +65,11 @@
     <div class="card" id="adminPanel" style="display:none; border-top: 5px solid #d93025;">
         <div id="listSection">
             <h3 style="margin-top:0;">Member List</h3>
+            
+            <div class="progress-container" id="p_container">
+                <div class="progress-bar" id="p_bar"></div>
+            </div>
+
             <input type="text" id="searchBar" placeholder="Search name..." onkeyup="filterMembers()">
             <div id="memberList"></div>
         </div>
@@ -109,7 +127,6 @@
                         html += `<div class="info-box"><span class="label">${labels[k]}</span><div class="val">${data.userData[k] || '0'}</div></div>`;
                     }
 
-                    // Family Logic Display for Faiṭhâm
                     let fLabel = "Faiṭhâm";
                     if(data.userData.familyRole === "Member") {
                         fLabel = `Faiṭhâm (${data.userData.headName} data)`;
@@ -143,9 +160,17 @@
     }
 
     function loadMemberList() {
+        // Start Progress Animation
+        const pCont = document.getElementById('p_container');
+        const pBar = document.getElementById('p_bar');
+        pCont.style.display = 'block';
+        pBar.style.width = '30%'; // Initial surge
+
         fetch(`${api}?action=list`).then(res => res.json()).then(data => {
+            pBar.style.width = '100%';
             allMembers = data;
             renderList(data);
+            setTimeout(() => { pCont.style.display = 'none'; }, 600); // Hide after fill
         });
     }
 
@@ -175,7 +200,7 @@
                 
                 if(data.familyRole === "Member") {
                     fInput.style.display = "none";
-                    fLabel.innerHTML = "Faiṭhâm: <span style='color:#d93025;'>Faiṭhâm head a inthawk update rawh.</span>";
+                    fLabel.innerHTML = "Faiṭhâm: <span style='color:#d93025;'>Family Head aṭangin update rawh</span>";
                 } else {
                     fInput.style.display = "block";
                     fLabel.innerText = "Add Faiṭhâm";
@@ -195,7 +220,7 @@
     }
 
     function confirmSave() {
-        if (confirm("Hi member data hi i update nuom tak tak am?")) {
+        if (confirm("He member data hi i update duh tak tak em?")) {
             saveUpdate();
         }
     }
